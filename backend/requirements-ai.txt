@@ -1,0 +1,5 @@
+-r requirements.txt
+langchain>=0.3,<2.0
+langchain-openai>=0.2,<2.0
+langchain-chroma>=0.1,<2.0
+chromadb>=0.5,<2.0

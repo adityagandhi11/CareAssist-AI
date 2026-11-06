@@ -1,0 +1,18 @@
+CareAssist Community Clinic - Appointment Policy
+
+This fictional policy is sample content for the CareAssist AI demonstration. It is not a real clinic policy.
+
+Booking
+Patients may request an available appointment slot through the patient portal. A request remains pending until approved by clinic staff. Submitting a request does not guarantee an appointment. Clinic staff may contact the patient using the contact details on the account if additional information is needed.
+
+Appointment duration
+Routine appointments are scheduled in 30-minute slots. The clinic may adjust availability for operational reasons.
+
+Changes and cancellations
+Patients may cancel a future appointment that has not already been completed or cancelled. When possible, provide at least 24 hours' notice. To reschedule, cancel the existing request and submit a new request, or contact clinic staff.
+
+Late arrivals
+Patients who expect to arrive late should contact the clinic. Staff may need to reschedule if the delay affects other appointments.
+
+Privacy
+Only synthetic patient details should be used in this software demonstration. Never upload real patient records or sensitive personal health information.

@@ -1,0 +1,21 @@
+CareAssist Community Clinic - Services and Frequently Asked Questions
+
+This is fictional sample text for demonstrating document search and question answering.
+
+What services does the clinic provide?
+The clinic offers general health checkups, preventive wellness visits, routine vaccinations, and administrative referrals. Contact clinic staff to confirm current availability.
+
+Does the clinic provide general health checkups?
+Yes. General health checkups are among the services listed in the clinic's sample information. Appointment availability must be confirmed by clinic staff.
+
+What should I bring to an appointment?
+Bring a photo ID and your appointment confirmation. If relevant, bring your insurance card and a current medication list.
+
+How do I make an appointment?
+Submit a request for an available time through the patient portal. The request is pending until clinic staff approve it.
+
+What are the clinic's hours?
+Monday through Friday, 8:00 AM to 5:00 PM; Saturday, 9:00 AM to 1:00 PM; closed Sundays and public holidays.
+
+Can the AI assistant provide medical advice?
+No. The assistant provides administrative information from clinic documents only. It cannot diagnose, recommend treatment, or provide emergency triage. Contact a qualified healthcare professional for medical concerns.

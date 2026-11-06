@@ -1,0 +1,24 @@
+CareAssist Community Clinic - General Information
+
+The CareAssist Community Clinic is a fictional clinic used for software demonstrations. This document contains synthetic information only.
+
+Operating hours
+Monday through Friday: 8:00 AM to 5:00 PM.
+Saturday: 9:00 AM to 1:00 PM.
+Sunday and public holidays: Closed.
+The last routine appointment begins 30 minutes before closing.
+
+Services
+The clinic offers general health checkups, preventive wellness visits, routine vaccinations, and administrative referrals. Availability may vary. Contact the clinic to confirm whether a particular service is offered.
+
+Preparing for an appointment
+Bring a photo ID, your appointment confirmation, and a current list of medications if relevant. If you have health insurance, bring your insurance card. Do not send sensitive medical records through the demonstration application's chat.
+
+Appointments and cancellations
+Appointment requests are not confirmed until clinic staff approve them. Requests are normally reviewed within one business day. Patients should cancel or request a change at least 24 hours before the appointment when possible. Contact the clinic directly if you need help with a late cancellation.
+
+General questions
+Clinic staff can help with scheduling, services, and administrative questions during operating hours. The AI assistant can answer only using the clinic documents made available to it. If the documents do not contain the answer, contact clinic staff.
+
+Medical disclaimer
+The CareAssist AI demonstration is not a medical service. It does not diagnose conditions, recommend treatment, or provide emergency triage. For medical concerns, contact a qualified healthcare professional. In an emergency, contact your local emergency services.
