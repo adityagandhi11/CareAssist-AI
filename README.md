@@ -6,7 +6,7 @@ CareAssist AI is a local clinic-management demonstration with separate Angular a
 
 - Python 3.11 or later
 - Node.js and npm
-- An OpenAI API key for live LLM-backed chat, classification, and summarization
+- A Groq API key for live LLM-backed chat, classification, and summarization
 
 ## Backend
 
@@ -57,7 +57,7 @@ The Angular application is available at [http://localhost:4200](http://localhost
 
 ## Sample clinic documents
 
-The fictional, synthetic clinic materials in [sample_data/](./sample_data/) are added to the administrator's document list as pending when you run the seed script. Configure an OpenAI API key and the optional AI dependencies, then process these documents from the document-management page to index them for RAG. The assistant answers only from processed clinic documents and does not provide medical advice.
+The fictional, synthetic clinic materials in [sample_data/](./sample_data/) are added to the administrator's document list as pending when you run the seed script. Configure `GROQ_API_KEY` in `backend\.env` and install the optional AI dependencies, then process these documents from the document-management page to index them for RAG. The application uses Groq's `openai/gpt-oss-120b` model for LLM-backed features and Chroma's built-in local embedding model for document indexing. The assistant answers only from processed clinic documents and does not provide medical advice.
 
 ## Tests
 

@@ -154,18 +154,26 @@ def test_enquiry_structured_ai_fields_are_validated_with_local_fallback(monkeypa
         def invoke(self, prompt):
             return responses.pop(0)
 
+    options = []
     fake_openai = types.ModuleType("langchain_openai")
-    fake_openai.ChatOpenAI = lambda **kwargs: FakeModel()
+
+    def fake_chat_openai(**kwargs):
+        options.append(kwargs)
+        return FakeModel()
+
+    fake_openai.ChatOpenAI = fake_chat_openai
     monkeypatch.setitem(sys.modules, "langchain_openai", fake_openai)
-    monkeypatch.setattr(settings, "openai_api_key", "test-key")
+    monkeypatch.setattr(settings, "groq_api_key", "test-key")
     assert analyze_enquiry("Service question", "Are wellness visits offered?").category == "services"
+    assert options[0]["model"] == "openai/gpt-oss-120b"
+    assert options[0]["base_url"] == "https://api.groq.com/openai/v1"
     fallback = analyze_enquiry("Reschedule appointment", "Please change my booking.")
     assert fallback.category == "appointment"
     assert fallback.suggested_response
 
 
 def test_ai_unavailable_is_explicit_and_conversation_remains_owned(client: TestClient, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(settings, "openai_api_key", None)
+    monkeypatch.setattr(settings, "groq_api_key", None)
     headers = register(client)
     conversation = client.post("/api/chat/conversations", json={}, headers=headers)
     assert conversation.status_code == 201
@@ -183,8 +191,11 @@ def test_ai_unavailable_is_explicit_and_conversation_remains_owned(client: TestC
     ).status_code == 404
 
 
-def test_admin_document_upload_and_optional_ai_failure(client: TestClient, monkeypatch: pytest.MonkeyPatch):
-    monkeypatch.setattr(settings, "openai_api_key", None)
+def test_admin_document_upload_and_local_indexing_without_groq_key(client: TestClient, monkeypatch: pytest.MonkeyPatch):
+    from app.services import documents as document_service
+
+    monkeypatch.setattr(settings, "groq_api_key", None)
+    monkeypatch.setattr(document_service, "_local_embeddings", lambda: object())
     test_upload_dir = Path(__file__).parent / "upload_test_data"
     monkeypatch.setattr(settings, "upload_directory", str(test_upload_dir))
     admin_login = client.post(
@@ -207,10 +218,26 @@ def test_admin_document_upload_and_optional_ai_failure(client: TestClient, monke
         )
         assert uploaded.status_code == 201
         document_id = uploaded.json()["id"]
+        fake_chroma = types.ModuleType("langchain_chroma")
+        fake_core = types.ModuleType("langchain_core.documents")
+
+        class FakeChroma:
+            def __init__(self, **kwargs):
+                pass
+
+            def delete(self, where):
+                pass
+
+            def add_documents(self, docs, ids):
+                pass
+
+        fake_chroma.Chroma = FakeChroma
+        fake_core.Document = lambda **kwargs: SimpleNamespace(**kwargs)
+        monkeypatch.setitem(sys.modules, "langchain_chroma", fake_chroma)
+        monkeypatch.setitem(sys.modules, "langchain_core.documents", fake_core)
         processed = client.post(f"/api/documents/{document_id}/process", headers=admin_headers)
-        assert processed.status_code == 503
-        assert "OPENAI_API_KEY" in processed.json()["detail"]
-        assert client.get("/api/documents", headers=admin_headers).json()[0]["status"] == "failed"
+        assert processed.status_code == 200
+        assert client.get("/api/documents", headers=admin_headers).json()[0]["status"] == "processed"
         summary = client.get(f"/api/documents/{document_id}/summary", headers=admin_headers)
         assert summary.status_code == 200
         assert "Clinic hours" in summary.json()["summary"]
@@ -297,6 +324,7 @@ def test_chat_passes_previous_turns_to_answerer(client: TestClient, monkeypatch:
 
 def test_document_pdf_pages_and_reprocess_replace_chunks(client: TestClient, monkeypatch: pytest.MonkeyPatch):
     import pypdf
+    from app.services import documents as document_service
     from app.services.documents import process_document
 
     admin_login = client.post(
@@ -306,7 +334,8 @@ def test_document_pdf_pages_and_reprocess_replace_chunks(client: TestClient, mon
     admin_headers = {"Authorization": f"Bearer {admin_login.json()['access_token']}"}
     test_upload_dir = Path(__file__).parent / "pdf_test_data"
     monkeypatch.setattr(settings, "upload_directory", str(test_upload_dir))
-    monkeypatch.setattr(settings, "openai_api_key", "test-key")
+    monkeypatch.setattr(settings, "groq_api_key", "test-key")
+    monkeypatch.setattr(document_service, "_local_embeddings", lambda: object())
     monkeypatch.setattr(
         pypdf,
         "PdfReader",
@@ -354,11 +383,8 @@ def test_document_pdf_pages_and_reprocess_replace_chunks(client: TestClient, mon
         fake_chroma.Chroma = FakeChroma
         fake_core = types.ModuleType("langchain_core.documents")
         fake_core.Document = lambda **kwargs: SimpleNamespace(**kwargs)
-        fake_openai = types.ModuleType("langchain_openai")
-        fake_openai.OpenAIEmbeddings = lambda **kwargs: object()
         monkeypatch.setitem(sys.modules, "langchain_chroma", fake_chroma)
         monkeypatch.setitem(sys.modules, "langchain_core.documents", fake_core)
-        monkeypatch.setitem(sys.modules, "langchain_openai", fake_openai)
         assert process_document(document) == 2
         assert process_document(document) == 2
         assert deleted == [{"document_id": document.id}, {"document_id": document.id}]

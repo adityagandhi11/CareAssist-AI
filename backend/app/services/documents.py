@@ -11,6 +11,31 @@ from app.config import settings
 from app.models import KnowledgeDocument, User
 
 
+_DOCUMENT_COLLECTION = "careassist_docs_local"
+
+
+def _local_embeddings():
+    try:
+        from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
+        from langchain_core.embeddings import Embeddings
+    except ImportError as exc:
+        raise RuntimeError(
+            "AI processing is unavailable: install the optional LangChain/Chroma dependencies"
+        ) from exc
+
+    class LocalChromaEmbeddings(Embeddings):
+        def __init__(self):
+            self.embedding_function = DefaultEmbeddingFunction()
+
+        def embed_documents(self, texts: list[str]) -> list[list[float]]:
+            return self.embedding_function(texts)
+
+        def embed_query(self, text: str) -> list[float]:
+            return self.embedding_function([text])[0]
+
+    return LocalChromaEmbeddings()
+
+
 async def upload_document(file: UploadFile, admin: User, db: Session) -> KnowledgeDocument:
     suffix = Path(file.filename or "").suffix.casefold()
     if suffix not in {".txt", ".pdf"}:
@@ -82,12 +107,9 @@ def _chunks(text: str, size: int = 1200, overlap: int = 200) -> list[str]:
 
 
 def process_document(document: KnowledgeDocument) -> int:
-    if not settings.openai_api_key:
-        raise RuntimeError("AI processing is unavailable: OPENAI_API_KEY is not configured")
     try:
         from langchain_chroma import Chroma
         from langchain_core.documents import Document
-        from langchain_openai import OpenAIEmbeddings
     except ImportError as exc:
         raise RuntimeError("AI processing is unavailable: install the optional LangChain/Chroma dependencies") from exc
 
@@ -100,9 +122,9 @@ def process_document(document: KnowledgeDocument) -> int:
     if not chunks:
         raise RuntimeError("Document contains no indexable text")
     vectorstore = Chroma(
-        collection_name="careassist_docs",
+        collection_name=_DOCUMENT_COLLECTION,
         persist_directory=settings.chroma_persist_directory,
-        embedding_function=OpenAIEmbeddings(api_key=settings.openai_api_key),
+        embedding_function=_local_embeddings(),
     )
     vectorstore.delete(where={"document_id": document.id})
     vectorstore.add_documents(
@@ -129,8 +151,9 @@ def delete_document_vectors(document_id: int) -> None:
     except ImportError as exc:
         raise RuntimeError("Cannot remove indexed document: install the optional LangChain/Chroma dependencies") from exc
     vectorstore = Chroma(
-        collection_name="careassist_docs",
+        collection_name=_DOCUMENT_COLLECTION,
         persist_directory=settings.chroma_persist_directory,
+        embedding_function=_local_embeddings(),
     )
     vectorstore.delete(where={"document_id": document_id})
 
@@ -139,18 +162,17 @@ def answer_question(
     question: str,
     history: list[tuple[str, str]] | None = None,
 ) -> tuple[str, list[str]]:
-    if not settings.openai_api_key:
-        raise RuntimeError("AI assistant is unavailable: OPENAI_API_KEY is not configured")
+    if not settings.groq_api_key:
+        raise RuntimeError("AI assistant is unavailable: GROQ_API_KEY is not configured")
     try:
         from langchain_chroma import Chroma
-        from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+        from langchain_openai import ChatOpenAI
     except ImportError as exc:
         raise RuntimeError("AI assistant is unavailable: install the optional LangChain/Chroma dependencies") from exc
 
     vectorstore = Chroma(
-        collection_name="careassist_docs",
+        collection_name=_DOCUMENT_COLLECTION,
         persist_directory=settings.chroma_persist_directory,
-        embedding_function=OpenAIEmbeddings(api_key=settings.openai_api_key),
     )
     matches = vectorstore.similarity_search_with_relevance_scores(question, k=4)
     relevant = [(doc, score) for doc, score in matches if score >= 0.15]
@@ -194,8 +216,9 @@ def answer_question(
             messages.append(AIMessage(content=content[:6000]))
     messages.append(HumanMessage(content=question))
     response = ChatOpenAI(
-        model=settings.openai_model,
-        api_key=settings.openai_api_key,
+        model=settings.groq_model,
+        api_key=settings.groq_api_key,
+        base_url=settings.groq_base_url,
         temperature=0,
     ).invoke(messages)
     answer = str(response.content).strip()
@@ -214,14 +237,17 @@ def summarize_document(document: KnowledgeDocument) -> tuple[str, list[int]]:
     if not selected:
         return "No readable text is available to summarize.", []
     fallback = " ".join(text.rstrip(".") + "." for _, text in selected[:8])[:1600]
-    if not settings.openai_api_key:
+    if not settings.groq_api_key:
         return fallback, [page for page, _ in selected]
     try:
         from langchain_openai import ChatOpenAI
 
         pages_text = "\n\n".join(f"[Page {page}]\n{text}" for page, text in selected[:20])
         response = ChatOpenAI(
-            model=settings.openai_model, api_key=settings.openai_api_key, temperature=0
+            model=settings.groq_model,
+            api_key=settings.groq_api_key,
+            base_url=settings.groq_base_url,
+            temperature=0,
         ).invoke(
             "Summarize this clinic document faithfully and concisely. Use only its content, include no "
             "medical advice, and do not invent facts. Cite page numbers as [Page N].\n\n"

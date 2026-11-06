@@ -52,12 +52,17 @@ def _fallback_analysis(subject: str, message: str) -> EnquiryAnalysis:
 def analyze_enquiry(subject: str, message: str) -> EnquiryAnalysis:
     """Use validated structured AI output when configured; always fall back locally."""
     fallback = _fallback_analysis(subject, message)
-    if not settings.openai_api_key:
+    if not settings.groq_api_key:
         return fallback
     try:
         from langchain_openai import ChatOpenAI
 
-        model = ChatOpenAI(model=settings.openai_model, api_key=settings.openai_api_key, temperature=0)
+        model = ChatOpenAI(
+            model=settings.groq_model,
+            api_key=settings.groq_api_key,
+            base_url=settings.groq_base_url,
+            temperature=0,
+        )
         analyzer = model.with_structured_output(EnquiryAnalysis)
         result = analyzer.invoke(
             "Classify this clinic administrative enquiry. Return a concise, faithful summary, a short "

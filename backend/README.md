@@ -13,7 +13,7 @@ python -m pip install -r requirements.txt
 Copy-Item .env.example .env
 ```
 
-Set a long, unique `SECRET_KEY` in `.env`. The core API works without an OpenAI key. To enable embedding and document-grounded chat, install the optional AI packages with `python -m pip install -r requirements-ai.txt` and set `OPENAI_API_KEY`. AI operations return an explicit HTTP 503 error when configuration or optional packages are unavailable instead of preventing the core API from starting.
+Set a long, unique `SECRET_KEY` and `GROQ_API_KEY` in `.env`. The configured chat model is `openai/gpt-oss-120b` on Groq; the default OpenAI-compatible endpoint is `https://api.groq.com/openai/v1`. Override these with `GROQ_MODEL` or `GROQ_BASE_URL` if needed. Install the optional AI packages with `python -m pip install -r requirements-ai.txt` to enable document indexing and document-grounded chat. Chroma uses its built-in local embedding model, so indexing does not require a separate embeddings API key. AI features return an explicit HTTP 503 error when required configuration or optional packages are unavailable instead of preventing the core API from starting.
 
 ```powershell
 python seed.py
@@ -42,7 +42,7 @@ All routes except `/health` use the `/api` prefix. Register patients with `POST 
 - `/api/patients`: administrator patient listing and deactivation
 - `/api/appointments`: patient-owned CRUD/cancellation; administrators can manage all records and statuses. Overlapping pending/approved slots are rejected with 409.
 - `/api/enquiries`: patient-owned submissions and reads; admin update/list; deterministic local category classification requires no AI key.
-- `/api/documents`: admin-only PDF/TXT upload and indexing. Indexing uses OpenAI embeddings and persistent ChromaDB.
+- `/api/documents`: admin-only PDF/TXT upload and indexing. Indexing uses Chroma's local embedding model and persistent ChromaDB; reprocess documents previously indexed with another embedding model to make them available in the local-embedding collection.
 - `/api/chat`: patient-owned conversation history; grounded answers cite document filenames. The assistant does not provide medical advice or emergency triage.
 - `/api/dashboard`: role-specific counts calculated from current database records
 

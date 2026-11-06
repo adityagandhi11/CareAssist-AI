@@ -14,8 +14,9 @@ class Settings(BaseSettings):
     secret_key: str = "development-only-change-me"
     access_token_expire_minutes: int = 60
     cors_origins: str = "http://localhost:4200"
-    openai_api_key: str | None = None
-    openai_model: str = "gpt-4o-mini"
+    groq_api_key: str | None = None
+    groq_model: str = "openai/gpt-oss-120b"
+    groq_base_url: str = "https://api.groq.com/openai/v1"
     chroma_persist_directory: str = str(BACKEND_DIR / "data" / "chroma")
     upload_directory: str = str(BACKEND_DIR / "data" / "uploads")
     max_upload_size_mb: int = 10
